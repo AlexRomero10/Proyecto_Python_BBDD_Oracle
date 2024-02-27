@@ -54,8 +54,8 @@ def mostrar_empresas_por_localidad(db):
 #Ejercicio2
 def buscar_cargos(conexion, subcadena):
     cursor = conexion.cursor()
-    consulta = ("SELECT Cargo FROM PERSONA_DE_CONTACTO WHERE Cargo LIKE %s")
-    cursor.execute(consulta, (subcadena + '%',))
+    consulta = ("SELECT Cargo FROM PERSONA_DE_CONTACTO WHERE Cargo LIKE :subcadena")
+    cursor.execute(consulta, {'subcadena': subcadena + '%'})
 
     cargos_encontrados = cursor.fetchall()
 
@@ -67,6 +67,7 @@ def buscar_cargos(conexion, subcadena):
         print("No se encontraron cargos que comiencen con '{}".format(subcadena))
 
 
+
 #Ejercicio3
 def mostrar_area_trabajo_empleado(db, nombre_empleado):
     try:
@@ -76,9 +77,9 @@ def mostrar_area_trabajo_empleado(db, nombre_empleado):
                  WHERE ID_AreaTrabajo = (
                      SELECT ID_AreaTrabajo
                      FROM AreaTrabajo
-                     WHERE Nombre = %s
+                     WHERE Nombre = :nombre_empleado
                  )"""
-        cursor.execute(sql, (nombre_empleado,))
+        cursor.execute(sql, {'nombre_empleado': nombre_empleado})
         resultado = cursor.fetchone()
         if resultado:
             print(f"Área de trabajo de {nombre_empleado}:")
@@ -88,14 +89,19 @@ def mostrar_area_trabajo_empleado(db, nombre_empleado):
     except Exception as e:
         print(f"Ocurrió un error: {e}")
 
+
 #Ejercicio4
-def agregar_empresa(db, cif, nombre, direccion, localidad):
-    cursor = db.cursor()
-    sql = "INSERT INTO EMPRESA (cif, nombre, direccion, localidad) VALUES (%s, %s, %s, %s)"  # Corregido el nombre de la tabla a 'empresa'
-    val = (cif, nombre, direccion, localidad)
-    cursor.execute(sql, val)
-    db.commit()
-    print(cursor.rowcount, "empresa insertada.")
+def agregar_empresa(conexion, cif, nombre, direccion, localidad):
+    try:
+        cursor = conexion.cursor()
+        sql = "INSERT INTO Empresa (CIF, Nombre, Direccion, Localidad) VALUES (:cif, :nombre, :direccion, :localidad)"
+        val = {'cif': cif, 'nombre': nombre, 'direccion': direccion, 'localidad': localidad}
+        cursor.execute(sql, val)
+        conexion.commit()
+        print("Empresa agregada correctamente.")
+    except Exception as e:
+        print(f"Error al agregar la empresa: {e}")
+
 
 def actualizar_tabla_empresa(db):
     cursor = db.cursor()
@@ -117,14 +123,15 @@ def actualizar_tabla_empresa(db):
 def eliminar_personas_por_prefijo(db, prefijo):
     try:
         cursor = db.cursor()
-        sql = "DELETE FROM PERSONA_DE_CONTACTO WHERE Cargo LIKE %s"
-        cursor.execute(sql, (prefijo + '%',))
+        sql = "DELETE FROM PERSONA_DE_CONTACTO WHERE Cargo LIKE :prefijo"
+        cursor.execute(sql, {'prefijo': prefijo + '%'})
         filas_afectadas = cursor.rowcount
         print(f"Se han eliminado {filas_afectadas} registros donde el nombre comienza con '{prefijo}'.")
         db.commit()
-    except:
-        print("Se ha producido un error al eliminar los clientes.")
+    except Exception as e:
+        print(f"Se ha producido un error al eliminar los clientes: {e}")
         db.rollback()
+
 def actualizar_tabla_persona_contacto(db):
     cursor = db.cursor()
     sql = "SELECT * FROM PERSONA_DE_CONTACTO"
@@ -144,15 +151,16 @@ def actualizar_tabla_persona_contacto(db):
 
 #Ejercicio6
 def actualizar_area_trabajo(db, ID_AreaTrabajo, campo, nuevo_valor):
-    sql = "UPDATE AreaTrabajo SET Nombre = %s WHERE ID_AreaTrabajo = %s"
+    sql = f"UPDATE AreaTrabajo SET {campo} = :nuevo_valor WHERE ID_AreaTrabajo = :ID_AreaTrabajo"
     try:
         cursor = db.cursor()
-        cursor.execute(sql, (nuevo_valor, ID_AreaTrabajo))
+        cursor.execute(sql, {'nuevo_valor': nuevo_valor, 'ID_AreaTrabajo': ID_AreaTrabajo})
         db.commit()
         print("La información ha sido actualizada correctamente.")
     except Exception as e:
         db.rollback()
         print("No se ha podido actualizar la información:", e)
+
 
 def actualizar_tabla_area_trabajo(db):
     cursor = db.cursor()
